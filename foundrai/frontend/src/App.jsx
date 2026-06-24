@@ -1486,16 +1486,26 @@ function PitchGeneratorPage() {
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function FoundrAI() {
-  const [page, setPage] = useState("landing");
-  const [user, setUser] = useState(null);
-
-  // Restore session on reload if a token is already stored
+  const [page, setPage] = useState(() => {
+  return localStorage.getItem("foundrai_token")
+    ? "dashboard"
+    : "landing";
+});
+  const [user,setUser]=useState(null);
   useEffect(() => {
-    const token = localStorage.getItem("foundrai_token");
-    if (!token) return;
-    api("/auth/me", { auth: true }).then(({ user }) => setUser(user)).catch(() => localStorage.removeItem("foundrai_token"));
-  }, []);
+  const token = localStorage.getItem("foundrai_token");
 
+  if (!token) return;
+
+  api("/auth/me", { auth: true })
+    .then(({ user }) => {
+      setUser(user);
+      setPage("dashboard");
+    })
+    .catch((err) => {
+      console.log("Auth restore failed:", err);
+    });
+}, []);
   const navItems = [
     { key: "dashboard", label: "🏠 Dashboard" },
     { key: "matching", label: "🤝 Find Co-Founder" },
@@ -1545,8 +1555,19 @@ export default function FoundrAI() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Avatar initials={user?.avatar || "U"} size={34} />
-          <span style={{ color: "#94A3B8", fontSize: 13 }}>{user?.name?.split(" ")[0]}</span>
-          <button onClick={() => { localStorage.removeItem("foundrai_token"); setUser(null); setPage("landing"); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", color: "#94A3B8", padding: "4px 12px", borderRadius: 8, cursor: "pointer", fontSize: 12 }}>Logout</button>
+
+<span>
+  {user?.name ? user.name.split(" ")[0] : "Guest"}
+</span>
+<button
+  onClick={() => {
+    localStorage.removeItem("foundrai_token");
+    setUser(null);
+    setPage("landing");
+  }}
+>
+  Logout
+</button>
         </div>
       </nav>
 
